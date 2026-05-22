@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Protection Portal - Blockchain Solution</title>
+    
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; color: #1c1e21; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; max-width: 800px; margin: 0 auto 20px auto; padding: 10px 0; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h1 { color: #1877f2; margin: 0; font-size: 1.5em; }
+        .status { text-align: center; font-weight: bold; margin-bottom: 25px; color: #606770; font-size: 0.85em; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+        
+        .wallet-btn { display: flex; align-items: center; background: white; border: 2px solid #1877f2; color: #1877f2; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .wallet-btn:hover { background: #f0f7ff; }
+        .wallet-btn img { width: 20px; margin-right: 8px; }
+        .connected { background: #42b72a; color: white; border-color: #42b72a; }
+
+        .action-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        .btn-reg { background: #1877f2; color: white; }
+        .btn-view { background: #42b72a; color: white; }
+        .result-box { margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 5px solid #42b72a; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>IP Portal</h1>
+    <button class="wallet-btn" id="connectBtn" onclick="connect()">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Mirror.svg" alt="MetaMask">
+        <span id="btnText">Connect Wallet</span>
+    </button>
+</div>
+
+<div class="container">
+    <p class="status" id="status">Status: Wallet Disconnected</p>
+
+    <div class="section">
+        <h3>Register New IP</h3>
+        <select id="ipType">
+            <option value="Patent">Patent</option>
+            <option value="Copyright">Copyright</option>
+            <option value="Trademark">Trademark</option>
+        </select>
+        <input type="text" id="ipDesc" placeholder="Enter title or asset hash">
+        <button class="action-btn btn-reg" onclick="registerIP()">Register on Blockchain</button>
+    </div>
+
+    <div class="section" style="border-top: 1px solid #ddd; padding-top: 20px;">
+        <h3>Verify & View IP Details</h3>
+        <input type="number" id="searchId" placeholder="e.g., 1">
+        <button class="action-btn btn-view" onclick="viewIP()">Verify Authenticity</button>
+
+        <div id="result" class="result-box">
+            <strong>Type:</strong> <span id="displayType"></span><br>
+            <strong>Owner:</strong> <span id="displayOwner" style="font-size: 0.8em; word-break: break-all;"></span><br>
+            <strong>Description:</strong> <span id="displayDesc"></span><br>
+            <strong>Date:</strong> <span id="displayDate"></span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const contractAddress = "0x5a2DfEDB8aB5422DD7D41EDcFC58A625615a5f13";
+    const abi = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"id","type":"uint256"},{"indexed":false,"internalType":"string","name":"ipType","type":"string"},{"indexed":true,"internalType":"address","name":"owner","type":"address"}],"name":"IPRegistered","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"id","type":"uint256"},{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"inputs":[{"internalType":"string","name":"_ipType","type":"string"},{"internalType":"string","name":"_description","type":"string"}],"name":"registerIP","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_id","type":"uint256"},{"internalType":"address","name":"_newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_id","type":"uint256"}],"name":"getIPDetails","outputs":[{"internalType":"string","name":"ipType","type":"string"},{"internalType":"string","name":"description","type":"string"},{"internalType":"address","name":"currentOwner","type":"address"},{"internalType":"uint256","name":"registeredAt","type":"uint256"},{"internalType":"address[]","name":"history","type":"address[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"ipRegistry","outputs":[{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"string","name":"ipType","type":"string"},{"internalType":"string","name":"description","type":"string"},{"internalType":"address","name":"currentOwner","type":"address"},{"internalType":"uint256","name":"registrationTimestamp","type":"uint256"},{"internalType":"bool","name":"isRegistered","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"}],"name":"ownershipHistory","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_id","type":"uint256"}],"name":"verifyIP","outputs":[{"internalType":"bool","name":"","type":"bool"},{"internalType":"address","name":"","type":"address"},{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}];
+
+    let contract;
+
+    async function connect() {
+        if (typeof window.ethers === 'undefined') {
+            alert("Ethers.js library not loaded. Check your internet connection.");
+            return;
+        }
+
+        if (window.ethereum) {
+            try {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const accounts = await provider.send("eth_requestAccounts", []);
+                const signer = provider.getSigner();
+                contract = new ethers.Contract(contractAddress, abi, signer);
+                
+                document.getElementById('btnText').innerText = accounts[0].substring(0, 6) + "...";
+                document.getElementById('connectBtn').classList.add('connected');
+                document.getElementById('status').innerText = "Status: Connected to Sepolia";
+            } catch (err) {
+                console.error(err);
+                alert("Connection failed! Make sure MetaMask is unlocked.");
+            }
+        } else {
+            alert("MetaMask not found! Install the extension.");
+        }
+    }
+
+    async function registerIP() {
+        if (!contract) { await connect(); if (!contract) return; }
+        const type = document.getElementById('ipType').value;
+        const desc = document.getElementById('ipDesc').value;
+        try {
+            const tx = await contract.registerIP(type, desc);
+            document.getElementById('status').innerText = "Status: Mining Transaction...";
+            await tx.wait();
+            alert("Registration Successful!");
+            document.getElementById('status').innerText = "Status: Connected";
+        } catch (e) { console.error(e); alert("Registration failed."); }
+    }
+
+    async function viewIP() {
+        if (!contract) { await connect(); if (!contract) return; }
+        const id = document.getElementById('searchId').value;
+        try {
+            const details = await contract.getIPDetails(id);
+            document.getElementById('displayType').innerText = details[0];
+            document.getElementById('displayDesc').innerText = details[1];
+            document.getElementById('displayOwner').innerText = details[2];
+            document.getElementById('displayDate').innerText = new Date(details[3].toNumber() * 1000).toLocaleString();
+            document.getElementById('result').style.display = "block";
+        } catch (e) { alert("ID not found."); }
+    }
+</script>
+</body>
+</html>
