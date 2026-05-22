@@ -17,7 +17,7 @@ An EVM-compatible smart contract built in Solidity (`^0.8.0`) designed to manage
 - **Contract Address:** `0x5a2DfEDB8aB5422DD7D41EDcFC58A625615a5f13`
 
 ## 🖥️ How to Run the Frontend Locally
-1. Download both `index.html` and `IntellectualPropertyProtection.sol` to the same folder on your machine.
+1. Download both `IntellectualPropertyProtection.html` and `IntellectualPropertyProtection.sol` to the same folder on your machine.
 2. Ensure you have the [MetaMask browser extension](https://metamask.io/) installed and switched to the **Sepolia Testnet**.
-3. Double-click `index.html` to open it in any web browser.
+3. Double-click `IntellectualPropertyProtection.html` to open it in any web browser.
 4. Click **Connect Wallet** to connect your account and interact with the immutable contract registry.
