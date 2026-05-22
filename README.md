@@ -10,7 +10,7 @@ An EVM-compatible smart contract built in Solidity (`^0.8.0`) designed to manage
 
 ## 📋 Repository Directory
 - `IntellectualPropertyProtection.sol`: The core smart contract source code.
-- `index.html`: Web-based dashboard and interactive portal connecting to the Sepolia Testnet.
+- `IntellectualPropertyProtection.html`: Web-based dashboard and interactive portal connecting to the Sepolia Testnet.
 
 ## 🛠️ Deployed Contract Details
 - **Network:** Sepolia Testnet
